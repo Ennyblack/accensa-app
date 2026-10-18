@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { authenticator } from 'otplib';
+import { generateSync } from 'otplib';
 import {
   encryptTotpSecret,
   decryptTotpSecret,
@@ -62,6 +62,10 @@ describe('TOTP and Secret Encryption', () => {
 
       // Pinned time step verification
       const now = 1700000000000;
+      const epochSeconds = Math.floor(now / 1000);
+      const token = generateSync(enrollment.secret, { epoch: epochSeconds });
+      expect(verifyTotpToken(token, enrollment.secret, now)).toBe(true);
+
       const code = verifyTotpToken('', enrollment.secret, now); // empty code returns false
       expect(code).toBe(false);
     });
@@ -78,18 +82,11 @@ describe('TOTP and Secret Encryption', () => {
       const baseTime = 1700000000000;
       const stepMs = 30_000;
 
-      authenticator.options = { crypto: require('crypto') as any };
-
-      const codeCurrent = authenticator.generate(secret);
-      
-      authenticator.options.time = Math.floor((baseTime - stepMs) / 1000);
-      const codePast = authenticator.generate(secret);
-
-      authenticator.options.time = Math.floor((baseTime + stepMs) / 1000);
-      const codeFuture = authenticator.generate(secret);
-
-      authenticator.options.time = Math.floor((baseTime + (stepMs * 2)) / 1000);
-      const codeFar = authenticator.generate(secret);
+      const baseEpoch = Math.floor(baseTime / 1000);
+      const codeCurrent = generateSync(secret, { epoch: baseEpoch });
+      const codePast = generateSync(secret, { epoch: baseEpoch - 30 });
+      const codeFuture = generateSync(secret, { epoch: baseEpoch + 30 });
+      const codeFar = generateSync(secret, { epoch: baseEpoch + 60 });
 
       expect(verifyTotpToken('12345', secret, baseTime)).toBe(false);
       expect(verifyTotpToken('1234567', secret, baseTime)).toBe(false);
