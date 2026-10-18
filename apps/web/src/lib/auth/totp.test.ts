@@ -78,53 +78,26 @@ describe('TOTP and Secret Encryption', () => {
       const baseTime = 1700000000000;
       const stepMs = 30_000;
 
-      // Generate valid token for baseTime using otplib
       authenticator.options = { crypto: require('crypto') as any };
-      const tokenCurrent = authenticator.generate(secret);
-
-      // Token for previous step (baseTime - 30s)
-      const tokenPast = authenticator.generate(secret);
-      // To generate past/future tokens precisely:
-      const timeCurrent = baseTime;
-      const timePast = baseTime - stepMs;
-      const timeFuture = baseTime + stepMs;
-      const timeFar = baseTime + (stepMs * 2);
 
       const codeCurrent = authenticator.generate(secret);
-      // Temporarily mock or generate codes at different time steps
-      // otplib allows generating for a given timestamp if epoch is supported or we can just calculate using authenticator options or time shifting:
-      const epochCurrent = Math.floor(baseTime / 1000);
-      const codeAtCurrent = authenticator.generate(secret);
-      const codeAtPast = authenticator.generate(secret);
+      
+      authenticator.options.time = Math.floor((baseTime - stepMs) / 1000);
+      const codePast = authenticator.generate(secret);
 
-      // Let's use otplib generate with epoch or test verifyTotpToken directly across time shifts:
-      // At baseTime, verifyTotpToken checks step S, S-1, S+1.
-      // If we generate a code at time T, verifyTotpToken(code, secret, T) should be true.
-      // verifyTotpToken(code, secret, T - 30000) should be true (T is now step+1 relative to T-30s).
-      // verifyTotpToken(code, secret, T + 30000) should be true (T is now step-1 relative to T+30s).
-      // verifyTotpToken(code, secret, T + 60000) should be false (2 steps away).
+      authenticator.options.time = Math.floor((baseTime + stepMs) / 1000);
+      const codeFuture = authenticator.generate(secret);
 
-      const testTime = 1700000000000;
-      // We need the exact code valid at testTime:
-      // Since authenticator.generate uses current time by default, we can set time or use options:
-      const code = authenticator.generate(secret);
+      authenticator.options.time = Math.floor((baseTime + (stepMs * 2)) / 1000);
+      const codeFar = authenticator.generate(secret);
 
-      // Let's test verifyTotpToken validation thoroughly:
-      expect(verifyTotpToken('12345', secret, testTime)).toBe(false);
-      expect(verifyTotpToken('1234567', secret, testTime)).toBe(false);
+      expect(verifyTotpToken('12345', secret, baseTime)).toBe(false);
+      expect(verifyTotpToken('1234567', secret, baseTime)).toBe(false);
 
-      // Verify current step accepts the valid code generated for testTime
-      expect(verifyTotpToken(code, secret, testTime)).toBe(true);
-
-      // Verify step - 1 (testTime + 30s makes the old code 1 step in the past)
-      expect(verifyTotpToken(code, secret, testTime + 30_000)).toBe(true);
-
-      // Verify step + 1 (testTime - 30s makes the future code 1 step in the future)
-      expect(verifyTotpToken(code, secret, testTime - 30_000)).toBe(true);
-
-      // Verify 2 steps out (testTime + 60s) rejects the code
-      expect(verifyTotpToken(code, secret, testTime + 60_000)).toBe(false);
-      expect(verifyTotpToken(code, secret, testTime - 60_000)).toBe(false);
+      expect(verifyTotpToken(codeCurrent, secret, baseTime)).toBe(true);
+      expect(verifyTotpToken(codePast, secret, baseTime)).toBe(true);
+      expect(verifyTotpToken(codeFuture, secret, baseTime)).toBe(true);
+      expect(verifyTotpToken(codeFar, secret, baseTime)).toBe(false);
     });
   });
 
