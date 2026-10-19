@@ -43,14 +43,17 @@ describe('TOTP and Secret Encryption', () => {
       // Tamper with a byte of the ciphertext / tag
       const parts = encrypted.split(':');
       // parts[2] is the auth tag, parts[3] is ciphertext
-      const tamperedTag = parts[2].slice(0, 4) + (parts[2][4] === 'A' ? 'B' : 'A') + parts[2].slice(5);
+      const tamperedTag =
+        parts[2].slice(0, 4) + (parts[2][4] === 'A' ? 'B' : 'A') + parts[2].slice(5);
       const tampered = `v1:${parts[1]}:${tamperedTag}:${parts[3]}`;
 
       expect(() => decryptTotpSecret(tampered)).toThrow();
     });
 
     it('throws on unrecognised format', () => {
-      expect(() => decryptTotpSecret('v2:invalid:format')).toThrow('Unrecognised TOTP secret format');
+      expect(() => decryptTotpSecret('v2:invalid:format')).toThrow(
+        'Unrecognised TOTP secret format',
+      );
     });
   });
 
@@ -105,7 +108,7 @@ describe('TOTP and Secret Encryption', () => {
       const issuer = 'AccensaTest';
 
       const uri = generateTotpUri(secret, email, issuer);
-      
+
       expect(uri).toContain('otpauth://totp/');
       expect(uri).toContain(encodeURIComponent(`${issuer}:${email}`));
       expect(uri).toContain(`secret=${secret}`);
