@@ -4,7 +4,6 @@ import {
   REDACTED_ADDRESS_MARKER,
   SENTRY_DSN,
   SENTRY_TRACES_SAMPLE_RATE,
-  STELLAR_ADDRESS_PATTERN,
   scrubStellarPii,
 } from './sentry-scrub';
 
