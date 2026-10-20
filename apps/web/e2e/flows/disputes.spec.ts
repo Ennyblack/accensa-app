@@ -81,7 +81,9 @@ test.describe('dispute flow', () => {
     await expect(page.getByText('No pending disputes in this window.')).toHaveCount(2);
   });
 
-  test('opens the dispute detail named by the route and shows that dispute id', async ({ page }) => {
+  test('opens the dispute detail named by the route and shows that dispute id', async ({
+    page,
+  }) => {
     await stubDisputeChat(page);
     await openDisputes(page);
 
@@ -99,7 +101,8 @@ test.describe('dispute flow', () => {
   });
 
   test('attaches evidence to a dispute and the UI shows the uploaded state', async ({ page }) => {
-    await page.route('**/api/disputes/**/evidence', (route) =>e.fulfill({
+    await page.route('**/api/disputes/**/evidence', (route) =>
+      route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({ cid: 'bafy-test-cid' }),
