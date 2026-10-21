@@ -9,22 +9,17 @@ export interface ApiKeyModalProps {
 }
 
 export function ApiKeyModal({ isOpen, onClose, onGenerate }: ApiKeyModalProps) {
+  // The form lives in its own component so that closing the modal unmounts it
+  // and throws its state away. Keeping the state here instead would leave the
+  // next open showing the previous session's name and permissions.
+  if (!isOpen) return null;
+
+  return <ApiKeyModalForm onClose={onClose} onGenerate={onGenerate} />;
+}
+
+function ApiKeyModalForm({ onClose, onGenerate }: Omit<ApiKeyModalProps, 'isOpen'>) {
   const [name, setName] = useState('');
   const [permissions, setPermissions] = useState<string[]>(['read']);
-  // Returning null below doesn't unmount this component, so its state would
-  // otherwise leak a closed-without-saving draft into the next time it opens.
-  // Adjusting state during render (rather than in an effect) avoids the
-  // cascading-render rejected by react-hooks/set-state-in-effect.
-  const [wasOpen, setWasOpen] = useState(isOpen);
-  if (isOpen !== wasOpen) {
-    setWasOpen(isOpen);
-    if (!isOpen) {
-      setName('');
-      setPermissions(['read']);
-    }
-  }
-
-  if (!isOpen) return null;
 
   const togglePermission = (perm: string) => {
     setPermissions((prev) =>
